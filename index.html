@@ -599,6 +599,81 @@ const SEED = {
 const SOUNDS = ['Digital Alarm Clock','Boxing Bell','Radar','Bike Bell','Big Bell','Chimes','Air Horn','Futuristic','Notification Beep'];
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,'-');
 const MUSCLES = ['Abs','Upper abs','Lower abs','Obliques','Lower back','Lats','Upper back/Traps','Rear delts','Front delts','Side delts','Chest','Upper chest','Biceps','Triceps','Forearms','Quads','Hamstrings','Glutes','Adductors','Abductors','Calves','Neck'];
+// default primary / secondary muscles, filled in for exercises that have none set
+const MUSCLE_DEFAULTS = (() => {
+  const C = 'Chest', UC = 'Upper chest', FD = 'Front delts', SD = 'Side delts', RD = 'Rear delts', TR = 'Triceps', BI = 'Biceps', FA = 'Forearms',
+    LA = 'Lats', UB = 'Upper back/Traps', LB = 'Lower back', QU = 'Quads', HA = 'Hamstrings', GL = 'Glutes', AD = 'Adductors', AB = 'Abductors', CA = 'Calves',
+    A = 'Abs', UA = 'Upper abs', LA2 = 'Lower abs', OB = 'Obliques';
+  const m = {};
+  const set = (names, p, s = []) => names.split('|').forEach(n => m[n.toLowerCase()] = [p, s]);
+  set('Bench Press|Decline Bench Press|Dumbbell Press|Squash Press|Chest Dips', [C], [TR, FD]);
+  set('Incline Bench Press|Incline Dumbbell Press', [UC], [FD, TR]);
+  set('Chest Flies|Dumbbell flies', [C], [FD]);
+  set('Incline Chest Flies|Incline Cable Crossovers', [UC], [FD]);
+  set('Pushups', [C], [TR, FD, A]);
+  set('Close Grip Bench Press', [TR], [C, FD]);
+  set('Shoulder Press|Dumbbell Shoulder Press', [FD], [SD, TR]);
+  set('Overhead Press', [FD], [SD, TR, UB]);
+  set('Lateral Raise', [SD], [UB]);
+  set('Front Raise', [FD], [SD]);
+  set('Rear Delt Flies', [RD], [UB]);
+  set('Upright Rows', [SD, UB], [FD, BI]);
+  set('Shrugs', [UB], [FA]);
+  set('Face Pull', [RD], [UB, SD]);
+  set('External Rotation', [RD], []);
+  set('Pull Up', [LA], [BI, UB, FA]);
+  set('Chin Up', [LA, BI], [UB, FA]);
+  set('Lat Pulldown', [LA], [BI, UB]);
+  set('Straight Arm Pulldown', [LA], [TR]);
+  set('Rows|Seated Cable Row|High Row', [UB, LA], [BI, RD]);
+  set('Bent Over Rows|Barbell Row', [UB, LA], [BI, RD, LB]);
+  set('Dumbbell Row', [LA], [UB, BI, RD]);
+  set('Back Flies', [UB], [RD]);
+  set('Hyperextensions', [LB], [GL, HA]);
+  set('Deadlift', [LB, GL, HA], [QU, UB, FA]);
+  set('Romanian Deadlift', [HA, GL], [LB]);
+  set('Barbell Bicep Curl|Curve Bar Curl|Dumbbell Bicep Curl|Preacher Curl|Incline Curl|Drag Curl|Concentration Curl|Cross Body Curl|Cable Curl', [BI], [FA]);
+  set('Hammer Curl', [BI, FA], []);
+  set('Overhand Curl', [FA], [BI]);
+  set('Behind Back Curls|Front Forearm Curls|Rollups|Reverse Wrist Curl|Wrist Curl', [FA], []);
+  set("Farmer's Carry", [FA], [UB]);
+  set('Pushdowns|Overhead Tricep Extension|Tricep Extension|Skull Crushers', [TR], []);
+  set('Dips|Dip Machine|Assisted Dips', [TR], [C, FD]);
+  set('Squat', [QU, GL], [AD, HA, LB]);
+  set('Hack Squat', [QU], [GL]);
+  set('Bulgarian Split Squats|Lunges|Leg Press', [QU, GL], [HA, AD]);
+  set('Leg Curl', [HA], [CA]);
+  set('Leg Extension', [QU], []);
+  set('Straight Leg Calf Extension|Bent Leg Calf Extension|Calf Raise|Jump Rope', [CA], []);
+  set('Hip Thrust', [GL], [HA]);
+  set('Hip Adduction', [AD], []);
+  set('Hip Abduction', [AB], [GL]);
+  set('Sled', [QU, GL], [CA, HA]);
+  set('Decline Crunch', [UA], [LA2]);
+  set('Full Crunch', [UA, LA2], [OB]);
+  set('Top Down Crunch|Crunches|Cable Crunches', [UA], [OB]);
+  set('Bodyweight Crunch|Situps', [UA], [LA2]);
+  set('Hanging Leg Raises|Leg Raises', [LA2], [OB]);
+  set('Plank', [A], [OB, LB]);
+  set('Bicycles', [OB], [UA, LA2]);
+  set('Wood Chops|Russian Twists|Trunk Twist', [OB], [UA]);
+  set('Running|Walking', [QU, CA], [HA, GL]);
+  set('Cycling', [QU], [CA, GL, HA]);
+  set('Rowing', [LA, QU], [UB, HA, BI]);
+  set('Elliptical', [QU, GL], [CA]);
+  set('Burpee', [C, QU], [TR, FD, A]);
+  set('Bear Crawl', [FD, A], [QU, TR]);
+  set('Step Ups', [QU, GL], [CA]);
+  set('Rope Pull', [LA, FA], [BI, UB]);
+  return m;
+})();
+function fillMuscles(e){
+  if (!e || (e.prim || []).length || (e.sec || []).length) return;
+  const d = MUSCLE_DEFAULTS[e.name.toLowerCase()]; if (!d) return;
+  const ok = x => S.muscles.includes(x);
+  e.prim = d[0].filter(ok); e.sec = d[1].filter(ok);
+}
+const RC_ALIAS = {"bench press":["Bench Press","free","together",""],"incline bench press":["Incline Bench Press","free","together",""],"decline bench press":["Decline Bench Press","free","together",""],"machine chest press":["Bench Press","machine","together","Machine chest press"],"dumbbell press":["Dumbbell Press","free","together",""],"incline dumbbell press":["Incline Dumbbell Press","free","together",""],"mid chest cable flys":["Chest Flies","cable","together",""],"decline chest cable flys":["Chest Flies","cable","together","Decline"],"mid machine flys":["Chest Flies","machine","together",""],"machine flies":["Chest Flies","machine","together",""],"dumbbell flies":["Chest Flies","free","together",""],"flies, cable (cable cage), together":["Chest Flies","cable","together","Cable cage"],"incline chest cable flys":["Incline Chest Flies","cable","together",""],"flies, cable, incline":["Incline Chest Flies","cable","together",""],"incline cable crossovers":["Incline Chest Flies","cable","together","Crossovers"],"squash press":["Squash Press","free","together",""],"plate chest contractions":["Squash Press","free","together","Plate"],"pushups":["Pushups",null,null,""],"deep stretch pushups":["Pushups",null,null,"Deep stretch"],"incline pushups":["Pushups",null,null,"Incline"],"tyrone's knee pushups":["Pushups",null,null,"Tyrone's knee pushups"],"shoulder dumbbell press":["Shoulder Press","free","together",""],"arnold press":["Shoulder Press","free","together","Arnold press"],"military press":["Overhead Press","free","together","Military press"],"dumbbell lateral raises":["Lateral Raise","free","together",""],"tilted dumbbell lateral raises":["Lateral Raise","free","iso","Tilted"],"cable lateral raises":["Lateral Raise","cable","iso",""],"lateral raise, cable, iso":["Lateral Raise","cable","iso",""],"machine lateral raises":["Lateral Raise","machine","together",""],"lateral raise, panatta":["Lateral Raise","machine","together","Panatta"],"dumbbell front raises":["Front Raise","free","together",""],"cable front raises":["Front Raise","cable","together",""],"rear delt flies":["Rear Delt Flies","machine","together",""],"rear delt flies, cable cage, iso":["Rear Delt Flies","cable","iso","Cable cage"],"rear delt flies, cable cage, together":["Rear Delt Flies","cable","together","Cable cage"],"rear delt fly, cable, iso":["Rear Delt Flies","cable","iso",""],"rear delt fly, machine, iso":["Rear Delt Flies","machine","iso",""],"back flies":["Back Flies","machine","together",""],"back flies, machine, together":["Back Flies","machine","together",""],"dumbbell rear flies":["Back Flies","free","together",""],"upright rows":["Upright Rows","free","together",""],"shruggies":["Shrugs","free","together",""],"shrugs, dumbbell":["Shrugs","free","together","Dumbbell"],"face pulls":["Face Pull","cable","together",""],"external rotation (band)":["External Rotation","free","together","Band"],"external rotators":["External Rotation","free","together",""],"pull up":["Pull Up",null,null,""],"pull ups, straight bar":["Pull Up",null,null,"Straight bar"],"a. pull up":["Pull Up",null,null,""],"chin up":["Chin Up",null,null,""],"pulldowns":["Lat Pulldown","cable","together",""],"goof machine pulldowns":["Lat Pulldown","machine","together","Goof machine"],"staright arm pulldowns":["Straight Arm Pulldown","cable","together",""],"straight arm pulldowns, rope":["Straight Arm Pulldown","cable","together","Rope"],"cable row":["Rows","cable","together",""],"cable row, wide grip":["Rows","cable","together","Wide grip"],"rows, cable, wide grip":["Rows","cable","together","Wide grip"],"rows, cable, close grip":["Rows","cable","together","Close grip"],"rows cable iso":["Rows","cable","iso",""],"lever rows":["Rows","machine","together","Lever"],"b. rows, lever/stomach, together":["Rows","machine","together","Lever / chest supported"],"b. rows, machine, iso":["Rows","machine","iso",""],"dumbbell row":["Rows","free","iso","Dumbbell"],"t-bar rows":["Bent Over Rows","free","together","T-bar"],"high row":["High Row","machine","together",""],"hyperextensions":["Hyperextensions",null,null,""],"lower back extension":["Hyperextensions",null,null,""],"deadlift":["Deadlift","free","together",""],"rdl":["Romanian Deadlift","free","together",""],"barbell bicep curl":["Barbell Bicep Curl","free","together",""],"dumbbell bicep curl":["Dumbbell Bicep Curl","free","iso",""],"hammer curl":["Hammer Curl","free","iso",""],"cable hammer curl, together":["Hammer Curl","cable","together",""],"rop cable curls":["Hammer Curl","cable","together","Rope"],"preacher curls":["Preacher Curl","free","together",""],"preacher curls, iso, preacher bench":["Preacher Curl","free","iso",""],"preacher curls, machine, iso":["Preacher Curl","machine","iso",""],"preacher curls, machine, together":["Preacher Curl","machine","together",""],"a. preacher curls, machine, together":["Preacher Curl","machine","together",""],"cable curls (incline)":["Incline Curl","cable","iso",""],"incline dumbbell curls":["Incline Curl","free","iso",""],"incline curls, dumbbell, iso":["Incline Curl","free","iso",""],"curve bar curls":["Curve Bar Curl","free","together",""],"overgrip bar curls":["Overhand Curl","free","together",""],"overhand curls":["Overhand Curl","free","together",""],"drag curls":["Drag Curl","free","together",""],"concentration curl":["Concentration Curl","free","iso",""],"behind back curls":["Behind Back Curls","free","together",""],"front forearm curls":["Front Forearm Curls","free","together",""],"rollups":["Rollups","free","together",""],"pushdowns":["Pushdowns","cable","together",""],"pushdowns, iso":["Pushdowns","cable","iso",""],"kneeling tricep extension":["Pushdowns","cable","iso","Kneeling"],"triceps extensions (behind head)":["Overhead Tricep Extension","cable","together",""],"skull crushers":["Overhead Tricep Extension","free","together","Skull crushers"],"skull crushers, together, cable":["Overhead Tricep Extension","cable","together","Skull crushers"],"triceps extensions":["Tricep Extension","free","together",""],"dips":["Dips",null,null,""],"dip machine":["Dip Machine","machine","together",""],"squat":["Squat","free","together",""],"hack squat":["Hack Squat","machine","together",""],"bulgarian split squats":["Bulgarian Split Squats","free","together",""],"lunges":["Lunges","free","together",""],"leg press":["Leg Press","machine","together",""],"leg press iso":["Leg Press","machine","iso",""],"leg curls":["Leg Curl","machine","together",""],"leg extensions":["Leg Extension","machine","together",""],"leg extension, iso":["Leg Extension","machine","iso",""],"leg extensions, iso":["Leg Extension","machine","iso",""],"calf raises":["Straight Leg Calf Extension","machine","together",""],"seated calf raises":["Bent Leg Calf Extension","machine","together",""],"rotary calf ext":["Bent Leg Calf Extension","machine","together","Rotary"],"hip thrusts, plate loaded, hinged":["Hip Thrust","machine","together","Plate loaded, hinged"],"hip thrusts railed machine":["Hip Thrust","machine","together","Railed machine"],"hip add/abductions":["Hip Adduction","machine","together",""],"sled":["Sled",null,null,""],"crunches":["Top Down Crunch","machine","together",""],"decline crunch":["Decline Crunch",null,null,""],"goof crunches":["Full Crunch","machine","together",""],"crunch goof machine, plate loaded":["Full Crunch","machine","together","Plate loaded"],"obleke goof crunch":["Full Crunch","machine","together","Oblique"],"kneeling cable crunches":["Cable Crunches","cable","together",""],"leg raises":["Hanging Leg Raises",null,null,""],"hanging leg raises, from bar":["Hanging Leg Raises",null,null,"From bar"],"situps":["Situps",null,null,""],"bicycle slow":["Bicycles",null,null,"Slow"],"wood chops":["Wood Chops","cable","together",""],"russian twists":["Russian Twists","free","together",""],"trunk twist":["Trunk Twist","machine","together",""],"burpee":["Burpee",null,null,""],"bear crawl":["Bear Crawl",null,null,""],"step ups":["Step Ups",null,null,""],"rope pull":["Rope Pull",null,null,""]};
 const MODES = {iso:'Iso', together:'Together'};
 const EQUIP = {free:'Free weight', cable:'Cable', machine:'Machine'};
 function defaultSettings(){ return {w:'lb', d:'mi', timers:[120,60,180], timerDur:90, autoStart:false, sound:'Digital Alarm Clock', repeatMode:'repeat'}; }
@@ -614,6 +689,7 @@ if (!S || !Array.isArray(S.workouts)) S = defaultState();
 S.settings = Object.assign(defaultSettings(), S.settings || {});
 if (!Array.isArray(S.muscles)) S.muscles = MUSCLES.slice();
 if (!Array.isArray(S.routines)) S.routines = [];
+if (!S.musDefaults){ S.musDefaults = 1; S.exercises.forEach(e => { e.prim ||= []; e.sec ||= []; fillMuscles(e); }); }
 if (!Array.isArray(S.folders)) S.folders = [];
 if (!S.absSplit){ S.absSplit = true; ['Upper abs','Lower abs'].forEach((m, k) => { if (!S.muscles.some(x => x.toLowerCase() === m.toLowerCase())){ const at = S.muscles.indexOf('Abs'); S.muscles.splice(at < 0 ? S.muscles.length : at + 1 + k, 0, m); } }); }
 // per-exercise: muscles (shared everywhere) + which variations it allows
@@ -1950,36 +2026,91 @@ function parseDateLine(line){
   d.setHours(12, 0, 0, 0); return {d, timed:false};
 }
 const toSec = s => s.split(':').reduce((a, v) => a * 60 + +v, 0);
+const FAIL_RE = /^~?(failure|failures|failur|failire|faiilure|gailure|gailurs|failrie|faolure|faikure|dailure|failrue|faliure|faklure|failiure|faulure|failureqwq)[.,!)]*$/i;
+const isNumTok = t => /^\d+(\.\d+)?(lbs?|kg)?$/i.test(t) || t === '?' || t === '000';
+const numVal = t => (t === '?' || t === '000') ? 0 : parseFloat(t);
+const repsLike = t => t === '?' || t === '000' || (/^\d+$/.test(t) && +t > 0 && +t <= 12);
+function dropPairs(nums){
+  const out = [];
+  for (let i = 0; i < nums.length;){
+    const a = nums[i], b = nums[i + 1];
+    if (a === '?' || a === '000'){ i++; continue; }
+    if (b === undefined){ out.push({w: numVal(a), r: 0}); i++; continue; }
+    if (b === '?' || b === '000' || b === '0'){ out.push({w: numVal(a), r: 0}); i += 2; continue; }
+    const ra = repsLike(a), rb = repsLike(b);
+    if (!ra && rb){ out.push({w: numVal(a), r: numVal(b)}); i += 2; }
+    else if (ra && !rb){ out.push(numVal(a) === 0 ? {w: 0, r: numVal(b)} : {w: numVal(b), r: numVal(a)}); i += 2; }
+    else if (ra && rb){ out.push({w: Math.max(numVal(a), numVal(b)), r: Math.min(numVal(a), numVal(b))}); i += 2; }
+    else if (numVal(a) === 0){ out.push({w: 0, r: numVal(b)}); i += 2; }
+    else { out.push({w: numVal(a), r: 0}); i++; }
+  }
+  return out;
+}
 function parseSetLine(line){
   let s = line.trim(), type = 'normal';
+  if (/^sec\b/i.test(s) || /^(lbs?|kg)\s*x\s*$/i.test(s)) return {empty: true};
+  { const nw = s.match(/^(lbs?|kg)\s*x\s*(\d+)\s*(.*)$/i); if (nw) return {set: {type, r: +nw[2], ...(nw[3].trim() ? {n: nw[3].trim()} : {})}, units: {}}; }   // "lb x 1": reps, no weight
   const wu = s.match(/^warm[\s-]?up:?\s*/i); if (wu){ type = 'warmup'; s = s.slice(wu[0].length); }
   const set = {type}, units = {};
-  let got = false, lastBare = false;
-  for (;;){
-    let m;
-    if ((m = s.match(/^(-?\d+(?:\.\d+)?)\s*(lbs?|kg)\b/i))){ set.w = +m[1]; units.w = /kg/i.test(m[2]) ? 'kg' : 'lb'; }
-    else if ((m = s.match(/^(\d+:\d{2}(?::\d{2})?)/))) set.t = toSec(m[1]);
-    else if ((m = s.match(/^(\d+(?:\.\d+)?)\s*(mi|miles?|km)\b/i))){ set.d = +m[1]; units.d = /km/i.test(m[2]) ? 'km' : 'mi'; }
-    else if ((m = s.match(/^(\d+(?:\.\d+)?)\s*(s|sec|secs|seconds|min|mins|minutes)\b/i))) set.t = /^m/i.test(m[2]) ? +m[1] * 60 : +m[1];
-    else if ((m = s.match(/^(\d+)\s*reps?\b/i))) set.r = +m[1];
-    else if (got && lastBare && (m = s.match(/^(\d+)\b/))) set.r = +m[1];
-    else break;
-    got = true; s = s.slice(m[0].length);
-    const x = s.match(/^\s*x\s*/i); lastBare = !!x;
-    if (x) s = s.slice(x[0].length); else break;
+  let m;
+  if ((m = s.match(/^(?:(\d+(?:\.\d+)?)\s*(lbs?|kg)\s*x\s*)?(\d+)\s*min\s*(\d+)\s*sec\b/i))){
+    if (m[1]){ set.w = +m[1]; units.w = /kg/i.test(m[2]) ? 'kg' : 'lb'; }
+    set.t = +m[3] * 60 + +m[4]; s = s.slice(m[0].length);
+  } else if ((m = s.match(/^(\d+(?:\.\d+)?)\s*(lbs?|kg)\s*x\s*(\d+)?(?=\s|$)/i))){   // RepCount: 130lb x 9  /  90lb x  (reps missing → 0)
+    set.w = +m[1]; units.w = /kg/i.test(m[2]) ? 'kg' : 'lb'; set.r = m[3] !== undefined ? +m[3] : 0; s = s.slice(m[0].length);
+  } else {
+    let got = false, lastBare = false;
+    for (;;){
+      if ((m = s.match(/^(-?\d+(?:\.\d+)?)\s*(lbs?|kg)\b/i))){ set.w = +m[1]; units.w = /kg/i.test(m[2]) ? 'kg' : 'lb'; }
+      else if ((m = s.match(/^(\d+:\d{2}(?::\d{2})?)/))) set.t = toSec(m[1]);
+      else if ((m = s.match(/^(\d+(?:\.\d+)?)\s*(mi|miles?|km|yds?|yards?|m)\b/i))){ set.d = +m[1]; units.d = /km/i.test(m[2]) ? 'km' : /^y/i.test(m[2]) ? 'yd' : /^m$/i.test(m[2]) ? 'm' : 'mi'; }
+      else if ((m = s.match(/^(\d+(?:\.\d+)?)\s*(s|sec|secs|seconds|min|mins|minutes)\b/i))) set.t = /^m/i.test(m[2]) ? +m[1] * 60 : +m[1];
+      else if ((m = s.match(/^(\d+)\s*reps?\b/i))) set.r = +m[1];
+      else if ((m = s.match(/^(\d+)(?=\s|$)/)) && (!got || lastBare)) set.r = +m[1];   // bare reps: "10 Pull ups", "12"
+      else break;
+      got = true; s = s.slice(m[0].length);
+      const x = s.match(/^\s*x\s*/i); lastBare = !!x;
+      if (x) s = s.slice(x[0].length); else break;
+    }
+    if (!got) return null;
   }
-  if (!got) return null;
-  // what follows: "Failure", "Drop 130 4" / "Drop 130lb x 4", then free text = the set's note
-  let last = set;
-  for (;;){
-    s = s.replace(/^\s+/, ''); let m;
-    if ((m = s.match(/^failure\b/i))){ last.f = true; s = s.slice(m[0].length); continue; }
-    if ((m = s.match(/^drop\s+(\d+(?:\.\d+)?)\s*(lbs?|kg)?\s*x?\s*(\d+)\b/i))){
-      const d = {w:+m[1], r:+m[3]}; (set.drops ||= []).push(d); set.type = 'drop'; last = d; s = s.slice(m[0].length); continue;
+  if (/\(warm ?up\)/i.test(s)){ set.type = 'warmup'; s = s.replace(/\(warm ?up\)/ig, ''); }
+  // after the numbers: "Failure", "Drop 130 4", "45 5", "drop 50 for 2 30 for 2", "Drop -> 70 for 1 -> 40 for 2 failure"; the rest is the note
+  const toks = s.replace(/->/g, ' -> ').trim().split(/\s+/).filter(Boolean);
+  let i = 0, last = set, inDrop = false;
+  const KW = /^(drop|dropped|then|->|for|-|down|to)$/i, protectedFail = k => k > 0 && /^(form|grip)$/i.test(toks[k - 1]);
+  while (i < toks.length){
+    const t = toks[i];
+    if (FAIL_RE.test(t)){ last.f = true; i++; continue; }
+    if (/^(drop|dropped|->)$/i.test(t) || (/^(then|down|to|for)$/i.test(t) && (inDrop || /^(then)$/i.test(t)) && toks[i + 1] && (isNumTok(toks[i + 1]) || KW.test(toks[i + 1])))){ inDrop = true; i++; continue; }
+    if (isNumTok(t)){
+      let j = i; const nums = [], fails = [];
+      while (j < toks.length){
+        const u = toks[j].replace(/,$/, '');
+        if (isNumTok(u)){ nums.push(u.replace(/(lbs?|kg)$/i, '')); j++; continue; }
+        if (/^(for|x|-|->)$/i.test(u)){ j++; continue; }
+        if (FAIL_RE.test(u)){ fails.push(nums.length); j++; continue; }
+        if (/^(drop|then)$/i.test(u) && toks[j + 1] && isNumTok(toks[j + 1])){ j++; continue; }
+        break;
+      }
+      const ends = j >= toks.length || fails.length;
+      if (nums.length && (inDrop || ends)){
+        let start = 0;
+        [...new Set([...fails, nums.length])].sort((a, b) => a - b).forEach(c => {
+          dropPairs(nums.slice(start, c)).forEach(d => { (set.drops ||= []).push(d); last = d; });
+          if (fails.includes(c)) last.f = true;
+          start = c;
+        });
+        if (set.drops?.length && set.type === 'normal') set.type = 'drop';
+        i = j; inDrop = false; continue;
+      }
     }
     break;
   }
-  if (s.trim()) set.n = s.trim();
+  const words = [];
+  for (let k = i; k < toks.length; k++){ if (FAIL_RE.test(toks[k]) && !protectedFail(k)) set.f = true; else words.push(toks[k]); }   // "failure" anywhere in the note → failure mark
+  const note = words.join(' ').trim();
+  if (note) set.n = note;
   return {set, units};
 }
 function parseImport(text){
@@ -1989,7 +2120,8 @@ function parseImport(text){
   const flushName = [];
   for (let i = 0; i < lines.length; i++){
     const l = lines[i].trim();
-    if (!l){ mode = null; ex = null; continue; }
+    if (!l){ mode = null; if (ex) ex.gap = true; continue; }
+    if (/^logged using repcount$/i.test(l)){ ex = null; continue; }
     const dl = parseDateLine(l);
     if (dl && !(ex && parseSetLine(l))){
       const name = flushName.splice(0).join(' ');
@@ -2002,10 +2134,14 @@ function parseImport(text){
     if (bw){ w.bw = +bw[1]; w.bwUnit = /kg/i.test(bw[2] || '') ? 'kg' : bw[2] ? 'lb' : null; continue; }
     if (ex){
       const p = parseSetLine(l);
-      if (p){ ex.sets.push(p.set); Object.assign(ex.units, p.units); continue; }
+      if (p?.empty) continue;
+      if (p){ ex.sets.push(p.set); Object.assign(ex.units, p.units); ex.gap = false; continue; }
+      if (ex.gap && ex.sets.length){ ex = null; }
+      else {
       // a line that isn't a set right after a name line that isn't followed by sets: treat the previous as a name with no sets
       if (!ex.sets.length){ bad.push(ex.raw); w.items.pop(); }
       else { bad.push(l); continue; }
+      }
     }
     // a lone line right before a date line is the next workout's name (this app's Copy text puts the name first)
     if (parseDateLine((lines[i + 1] || '').trim())){ flushName.push(l); w = null; continue; }
@@ -2019,7 +2155,8 @@ function parseImport(text){
     }
     ex.name = ex.name.trim();
   }
-  out.forEach(w => { w.items = w.items.filter(it => it.sets.length); });
+  out.forEach(w => { w.items = w.items.filter(it => it.sets.length);
+    w.items.forEach(it => { if (!it.mode){ const n = it.sets.map(s => s.n || '').join(' '); it.mode = /\biso\b|each (arm|side)/i.test(n) ? 'iso' : /\btogether\b/i.test(n) ? 'together' : null; } }); });
   return {workouts: out.filter(w => w.items.length || w.notes || w.bw !== ''), bad};
 }
 function guessType(it){
@@ -2059,7 +2196,7 @@ function doImportJSON(){
   P.plan.forEach(({d, e, act}) => {
     const used = e && S.workouts.some(w => w.items.some(it => it.exId === e.id));
     const fields = {cat: d.cat, type: d.type || 'wr', modeOpt: d.modeOpt || 'any', equipOpt: d.equipOpt || 'any'};
-    if (!e){ e = {id: uid(), name: d.name, ...fields, custom: true, prim: [], sec: []}; S.exercises.push(e); }
+    if (!e){ e = {id: uid(), name: d.name, ...fields, custom: true, prim: [], sec: []}; fillMuscles(e); S.exercises.push(e); }
     else { if (act === 'rename') e.name = d.name; if (!used) Object.assign(e, fields); }
     if (d.unit) e.unit = d.unit; if (d.dunit) e.dunit = d.dunit;
     ids[d.name.toLowerCase()] = e.id;
@@ -2099,8 +2236,13 @@ function importPrep(text){
   const {workouts, bad} = parseImport(text);
   const names = [...new Set(workouts.flatMap(w => w.items.map(it => it.name)))];
   const map = {};
-  names.forEach(n => { const e = findEx(n); const it = workouts.flatMap(w => w.items).find(x => x.name === n);
-    map[n] = e ? {use: e.id} : {use: 'new', cat: guessCat(n), type: guessType(it), unit: it.units.w}; });
+  names.forEach(n => {
+    const it = workouts.flatMap(w => w.items).find(x => x.name === n);
+    const al = RC_ALIAS[n.toLowerCase().replace(/’/g, "'")], t = al && findEx(al[0]);   // RepCount names → this app's exercise + variation
+    if (t){ map[n] = {use: t.id, alias: {target: t.id, equip: al[1], mode: al[2], note: al[3]}}; return; }
+    const e = findEx(n);
+    map[n] = e ? {use: e.id} : {use: 'new', cat: guessCat(n), type: guessType(it), unit: it.units.w};
+  });
   workouts.forEach(w => {
     const same = S.workouts.filter(o => sameDay(dt(o.start), w.date));
     const nSets = x => x.items.reduce((a, it) => a + it.sets.length, 0);
@@ -2121,19 +2263,22 @@ function doImport(){
         ex = {id: uid(), name: it.name, cat: m.cat, type: m.type, custom: true, prim: [], sec: [],
           modeOpt: ['t','dt'].includes(m.type) ? 'none' : 'any', equipOpt: ['bw','r','t','dt'].includes(m.type) ? 'none' : 'any'};
         if (m.unit && m.unit !== S.settings.w) ex.unit = m.unit;
-        S.exercises.push(ex); made[it.name] = ex;
+        fillMuscles(ex); S.exercises.push(ex); made[it.name] = ex;
       }
       const u = wUnit(ex), from = it.units.w, isBW = ex.type === 'bw';
       const sets = it.sets.map(s => {
         const o = {type: s.type, n: s.n || ''};
         ['w','r','d','t'].forEach(c => { if (!blank(s[c])) o[c] = c === 'w' ? conv(s.w, from, u) : s[c]; });
+        if (ex.type === 'wd' && blank(o.d) && !blank(o.r)){ o.d = o.r; delete o.r; }   // Sled: "90lb x 20 Yd" = distance
         if (isBW && o.w === 0) delete o.w;
         if (s.f) o.f = true;
-        if (s.drops) o.drops = s.drops.map(d => ({w: conv(d.w, from, u), r: d.r, ...(d.f ? {f: true} : {})}));
+        if (s.drops) o.drops = s.drops.map(d => { const x = {w: conv(d.w, from, u), r: d.r, ...(d.f ? {f: true} : {})}; if (isBW && x.w === 0) delete x.w; return x; });
         return o;
       });
-      const item = {id: uid(), exId: ex.id, ss: null, note: it.note || '', sets};
-      if (it.mode) item.mode = it.mode; if (it.equip) item.equip = it.equip;
+      const al = m.alias && m.use === m.alias.target ? m.alias : null;
+      const item = {id: uid(), exId: ex.id, ss: null, note: [al?.note, it.note].filter(Boolean).join(' · '), sets};
+      const mode = it.mode || al?.mode, equip = it.equip || al?.equip;
+      if (mode && ex.modeOpt !== 'none') item.mode = mode; if (equip && ex.equipOpt !== 'none') item.equip = equip;
       return item;
     });
     const start = w.date.getTime();
@@ -2173,7 +2318,7 @@ function importHTML(){
         <span class="sp"><b>${esc(w.date.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}))}</b>${w.name ? ` · ${esc(w.name)}` : ''}
         <small>${w.items.length} exercise${w.items.length === 1 ? '' : 's'} · ${w.items.reduce((a, it) => a + it.sets.length, 0)} sets${w.dup ? ' · <span style="color:var(--red)">already in your log</span>' : ''}</small></span></button>`).join('')}</div>
       <div class="sect" style="margin-top:16px">Exercises</div>
-      <div class="dgrp ro">${newNames.map(([n, m]) => `<div class="ror imx"><span class="sp">${esc(n)}<small>${m.use === 'new' ? 'Not in your exercises' : 'Matched'}</small></span>${sel(n, m)}</div>`).join('')}</div>
+      <div class="dgrp ro">${newNames.map(([n, m]) => `<div class="ror imx"><span class="sp">${esc(n)}<small>${m.use === 'new' ? 'Not in your exercises' : m.alias && m.use === m.alias.target ? `Matched to ${esc(exById(m.use)?.name || '')}` : 'Matched'}</small></span>${sel(n, m)}</div>`).join('')}</div>
       ${P.bad.length ? `<div class="sect" style="margin-top:16px;color:var(--red)">Lines skipped</div><div class="dgrp ro">${P.bad.map(l => `<div class="ror"><span class="sp" style="font-size:15px">${esc(l)}</span></div>`).join('')}</div>` : ''}
       <button class="btn" data-a="impGo" ${on ? '' : 'disabled'}>Import ${on} workout${on === 1 ? '' : 's'}</button>
     </div>`;
@@ -2600,7 +2745,7 @@ const A = {
   closeSheet(){ closeSheet(); },
   unit(d){ S.settings[d.k] = d.v; save(); render(); },
   sampleClear(){ menu('Remove the sample workouts? Your own workouts stay.', [{label:'Remove Sample Workouts', red:true, fn(){ S.workouts = S.workouts.filter(w => !w.sample); saveNow(); ui.sheet = null; render(); }}]); },
-  askReset(){ menu('Erase all workouts and custom exercises?', [{label:'Erase All Data', red:true, fn(){ S = defaultState(); saveNow(); ui.sheet = null; render(); }}]); }
+  askReset(){ menu('Erase all workouts and custom exercises?', [{label:'Erase All Data', red:true, fn(){ S = defaultState(); S.musDefaults = 1; S.exercises.forEach(fillMuscles); saveNow(); ui.sheet = null; render(); }}]); }
 };
 
 
